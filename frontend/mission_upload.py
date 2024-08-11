@@ -4,17 +4,19 @@ import folium
 from folium import plugins
 from streamlit_folium import folium_static
 from datetime import datetime
+import requests
 
 class GPSDataViewer:
     def __init__(self):
         if 'gps_data' not in st.session_state:
             st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp', 'delay', 'drop', 'servo', 'drop_delay'])
         if 'lat' not in st.session_state:
-            st.session_state.lat = 0.0
+            st.session_state.lat = 53.0190700
         if 'lon' not in st.session_state:
-            st.session_state.lon = 0.0
+            st.session_state.lon = 20.8802900
+        st.session_state.edit_index=None
 
-    def add_gps_point(self, lat, lon, delay, drop, servo, drop_delay):
+    def add_gps_point(self, lat, lon, delay, drop, servo, drop_delay, index=None):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         new_point = pd.DataFrame({
             'latitude': [lat], 
@@ -26,8 +28,8 @@ class GPSDataViewer:
             'drop_delay': [drop_delay]
         })
 
-        if st.session_state.gps_data.empty:
-            st.session_state.gps_data = new_point
+        if index is not None:
+            st.session_state.gps_data.iloc[index] = new_point.iloc[0]
         else:
             st.session_state.gps_data = pd.concat([st.session_state.gps_data, new_point], ignore_index=True)
 
@@ -76,13 +78,18 @@ class GPSDataViewer:
         drop_delay = st.number_input("Delay before drop (seconds)", min_value=0, step=1) if drop else None
         
         if st.button("Add Point"):
-            if len(st.session_state.gps_data) < 15:
-                self.add_gps_point(lat, lon, delay, drop, servo, drop_delay)
-                st.success(f"Point added: ({lat}, {lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                st.session_state.lat = 0.0
-                st.session_state.lon = 0.0
+            if st.session_state.edit_index is not None:
+                self.add_gps_point(lat, lon, delay, drop, servo, drop_delay, index=st.session_state.edit_index)
+                st.success(f"Point {st.session_state.edit_index} updated.")
+                st.session_state.edit_index = None
             else:
-                st.warning("You can add up to 15 points only.")
+                if len(st.session_state.gps_data) < 15:
+                    self.add_gps_point(lat, lon, delay, drop, servo, drop_delay)
+                    st.success(f"Point added: ({lat}, {lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                    st.session_state.lat = 53.0190700
+                    st.session_state.lon = 20.8802900
+                else:
+                    st.warning("You can add up to 15 points only.")
         
         st.subheader("Data Preview")
         st.write(st.session_state.gps_data)
@@ -102,9 +109,16 @@ class GPSDataViewer:
         
         if st.button("Upload Mission"):
             if not st.session_state.gps_data.empty:
-                print("Uploaded Mission Points:")
-                print(st.session_state.gps_data)
-                st.success("Mission uploaded successfully.")
+                url = "http://localhost:8001/upload"  # Adres serwera FastAPI
+                data_json = st.session_state.gps_data.to_json(orient='split')
+                try:
+                    response = requests.post(url, json={"data": data_json})
+                    if response.status_code == 200:
+                        st.success("Mission uploaded successfully.")
+                    else:
+                        st.error(f"Failed to upload data. Server responded with status code {response.status_code}.")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Failed to upload data. Error: {str(e)}")
             else:
                 st.warning("No points to upload.")
 
