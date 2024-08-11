@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import folium
+from folium import plugins
 from streamlit_folium import folium_static
 from datetime import datetime
 
@@ -15,18 +16,21 @@ def remove_gps_point(data, index):
     data = data.drop(index).reset_index(drop=True)
     return data
 
-# Funkcja do wyświetlenia mapy z punktami GPS
+# Funkcja do wyświetlenia mapy z punktami GPS połączonymi liniami
 def show_map(data):
     if not data.empty:
         # Tworzenie mapy z domyślną lokalizacją (pierwszy punkt)
         center_lat = data['latitude'].mean()
         center_lon = data['longitude'].mean()
-        map_ = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+        map_ = folium.Map(location=[center_lat, center_lon], zoom_start=12, )
         
         # Dodawanie punktów GPS do mapy
         for _, row in data.iterrows():
             folium.Marker(location=[row['latitude'], row['longitude']], 
                           popup=f"Time: {row['timestamp']}").add_to(map_)
+        
+        # Połączenie punktów liniami
+        folium.PolyLine(locations=data[['latitude', 'longitude']].values.tolist(), color='blue').add_to(map_)
         
         # Dopasowanie mapy do wszystkich punktów
         sw = data[['latitude', 'longitude']].min().values.tolist()
@@ -53,7 +57,7 @@ if 'lon' not in st.session_state:
     st.session_state.lon = 0.0
 
 # Formularz do wprowadzania danych GPS
-st.subheader("Enter GPS Coordinates")
+st.subheader("Enter GPS Coordinates ui")
 
 lat = st.number_input("Latitude", format="%.6f", value=st.session_state.lat, key="lat_input")
 lon = st.number_input("Longitude", format="%.6f", value=st.session_state.lon, key="lon_input")
@@ -86,19 +90,18 @@ if not st.session_state.gps_data.empty:
     if st.button("Remove Selected Point"):
         st.session_state.gps_data = remove_gps_point(st.session_state.gps_data, point_to_remove)
         st.success(f"Point {point_to_remove} removed.")
-        st.rerun()
     
     # Usunięcie wszystkich punktów
     if st.button("Remove All Points"):
         st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp'])
         st.success("All points removed.")
-        st.rerun()
 
 # Przycisk "Upload Mission"
 if st.button("Upload Mission"):
     if not st.session_state.gps_data.empty:
         print("Uploaded Mission Points:")
         print(st.session_state.gps_data)
+        st.success("Mission uploaded successfully.")
     else:
         st.warning("No points to upload.")
 

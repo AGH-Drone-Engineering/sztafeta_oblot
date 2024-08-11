@@ -1,13 +1,21 @@
-# Używamy oficjalnego obrazu Python jako bazowego
 FROM python:3.9-slim
 
-# Ustawienie katalogu roboczego w kontenerze
+# Ustaw katalog roboczy w kontenerze
 WORKDIR /app
 
-# Skopiowanie pliku requirements.txt do kontenera
-COPY requirements.txt .
+# Skopiuj pliki wymagań do katalogu roboczego
+COPY requirements.txt ./ 
 
-# Instalacja zależności
+# Zainstaluj zależności
 RUN pip install --no-cache-dir -r requirements.txt
+
+
+# Ustaw zmienną środowiskową, aby Streamlit nie próbował otworzyć przeglądarki
+ENV STREAMLIT_SERVER_PORT=8501
+
+# Informuj Docker, że kontener będzie nasłuchiwał na określonym porcie podczas działania
+EXPOSE 8501
+
+VOLUME [ "/app" ]
 
 CMD ["streamlit", "run", "mission_upload.py", "--server.port=8501", "--server.address=0.0.0.0"]
