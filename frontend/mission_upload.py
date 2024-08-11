@@ -8,15 +8,23 @@ from datetime import datetime
 class GPSDataViewer:
     def __init__(self):
         if 'gps_data' not in st.session_state:
-            st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp'])
+            st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp', 'delay', 'drop', 'servo', 'drop_delay'])
         if 'lat' not in st.session_state:
             st.session_state.lat = 0.0
         if 'lon' not in st.session_state:
             st.session_state.lon = 0.0
 
-    def add_gps_point(self, lat, lon):
+    def add_gps_point(self, lat, lon, delay, drop, servo, drop_delay):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        new_point = pd.DataFrame({'latitude': [lat], 'longitude': [lon], 'timestamp': [timestamp]})
+        new_point = pd.DataFrame({
+            'latitude': [lat], 
+            'longitude': [lon], 
+            'timestamp': [timestamp],
+            'delay': [delay],
+            'drop': [drop],
+            'servo': [servo],
+            'drop_delay': [drop_delay]
+        })
 
         if st.session_state.gps_data.empty:
             st.session_state.gps_data = new_point
@@ -24,7 +32,6 @@ class GPSDataViewer:
             st.session_state.gps_data = pd.concat([st.session_state.gps_data, new_point], ignore_index=True)
 
         return st.session_state.gps_data
-
 
     def remove_gps_point(self, index):
         st.session_state.gps_data = st.session_state.gps_data.drop(index).reset_index(drop=True)
@@ -38,8 +45,13 @@ class GPSDataViewer:
             map_ = folium.Map(location=[center_lat, center_lon], zoom_start=12)
             
             for _, row in data.iterrows():
+                popup_text = f"Time: {row['timestamp']}"
+                if row['delay']:
+                    popup_text += f"<br>Delay: {row['delay']}s"
+                if row['drop']:
+                    popup_text += f"<br>Drop: Servo {row['servo']}, Delay: {row['drop_delay']}s"
                 folium.Marker(location=[row['latitude'], row['longitude']], 
-                              popup=f"Time: {row['timestamp']}").add_to(map_)
+                              popup=popup_text).add_to(map_)
             
             folium.PolyLine(locations=data[['latitude', 'longitude']].values.tolist(), color='blue').add_to(map_)
             
@@ -58,9 +70,14 @@ class GPSDataViewer:
         lat = st.number_input("Latitude", format="%.6f", value=st.session_state.lat, key="lat_input")
         lon = st.number_input("Longitude", format="%.6f", value=st.session_state.lon, key="lon_input")
         
+        delay = st.number_input("Delay at this point (seconds)", min_value=0, step=1)
+        drop = st.checkbox("Payload drop at this point?")
+        servo = st.selectbox("Select Servo for drop", options=[1, 2, 3, 4]) if drop else None
+        drop_delay = st.number_input("Delay before drop (seconds)", min_value=0, step=1) if drop else None
+        
         if st.button("Add Point"):
             if len(st.session_state.gps_data) < 15:
-                self.add_gps_point(lat, lon)
+                self.add_gps_point(lat, lon, delay, drop, servo, drop_delay)
                 st.success(f"Point added: ({lat}, {lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 st.session_state.lat = 0.0
                 st.session_state.lon = 0.0
@@ -79,7 +96,7 @@ class GPSDataViewer:
                 st.rerun()
             
             if st.button("Remove All Points"):
-                st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp'])
+                st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp', 'delay', 'drop', 'servo', 'drop_delay'])
                 st.success("All points removed.")
                 st.rerun()
         
