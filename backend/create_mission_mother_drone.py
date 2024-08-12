@@ -113,6 +113,7 @@ class MissionPlanner:
 
         for i, item in enumerate(self.mission_items):
             self.vehicle.mav.send(item)
+            ack = self.vehicle.recv_match(type='MISSION_ACK', blocking=True)
             print(f"Komenda {i + 1}/{mission_count} wysłana.")
 
         print("Misja wgrana pomyślnie!")
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     planner.upload_mission()
     
     # Uzbrojenie drona i rozpoczęcie misji
-    planner.arm_and_start_mission()
+    # planner.arm_and_start_mission()
 
     # Zamknięcie połączenia
     planner.close_connection()
