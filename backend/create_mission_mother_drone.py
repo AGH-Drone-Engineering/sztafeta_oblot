@@ -77,33 +77,37 @@ class MissionPlanner:
         self.mission_items.add(self.create_return_to_launch_command())
 
     
-    # def retrieve_mission(self):
-    #     """
-    #     Pobiera i wyświetla aktualną misję wgraną w dronie.
-    #     """
-    #     self.vehicle.mav.mission_request_list_send()
-    #     msg = self.vehicle.recv_match(type=['MISSION_COUNT'], blocking=True)
-    #     mission_count = msg.count
-    #     print(f"Aktualna misja zawiera {mission_count} waypointów.")
+    
+    def read_current_mission(self):
+        self.vehicle.waypoint_request_list_send()
+        waypoint_count = 0
 
-    #     for i in range(mission_count):
-    #         self.vehicle.mav.mission_request_send(i)
-    #         msg = self.vehicle.recv_match(type=['MISSION_ITEM'], blocking=True)
-    #         print(f"Waypoint {i + 1}: lat={msg.x/1e7}, lon={msg.y/1e7}, alt={msg.z}")
+        msg = self.vehicle.recv_match(type=['MISSION_COUNT'], blocking=True)
+        waypoint_count = msg.count
+        print(waypoint_count)
 
+        for i in range(waypoint_count):
+            self.vehicle.waypoint_request_send(i)
+            msg = self.vehicle.recv_match(type=['MISSION_ITEM'], blocking=True)
+            print(f'Receiving waypoint {msg.seq} ----------')
+            print(msg)
+            print('\n')
+
+        self.vehicle.mav.mission_ack_send(self.vehicle.target_system, self.vehicle.target_component, 0)  
+    
     def upload_mission(self):
         """
         Funkcja do wgrania misji do pojazdu.
         """
-        self.vehicle.waypoint_clear_all_send()  # Dodano wyczyszczenie poprzedniej misji
-        # mission_count = len(self.mission_items)
+        self.vehicle.waypoint_clear_all_send()
+        
         self.vehicle.waypoint_count_send(self.mission_items.count())
 
         for i in range(self.mission_items.count()):
             msg = self.vehicle.recv_match(type=['MISSION_REQUEST'], blocking=True)
             self.vehicle.mav.send(self.mission_items.wp(msg.seq))
-            # ack = self.vehicle.recv_match(type='MISSION_ACK', blocking=True)
-            # print(f"Komenda {i + 1}/{mission_count} wysłana.")
+            print(self.mission_items.wp(msg.seq))
+            
         msg = self.vehicle.recv_match(type=['MISSION_ACK'], blocking=True)  # OKAY
         print(msg.type)
         print("Misja wgrana pomyślnie!")
@@ -130,26 +134,38 @@ class MissionPlanner:
         """
         self.vehicle.close()
         print("Połączenie zamknięte.")
+        
+    def set_servo(self, servo_number, pwm):
+        #183 to jest komenda do ustwienia serwa 
+        servo_message = mavutil.mavlink.MAVLink_mission_item_int_message(0, 0, 0,
+                                                                         0, 183, 0, 
+                                                                         1, float(servo_number), float(pwm), 
+                                                                         0.0, 0.0, 0, 0, 0)
+        self.mission_items.add(servo_message)
+
+    def set_delay(self, delay_seconds: int):
+        delay = mavutil.mavlink.MAVLink_mission_item_int_message(0, 0, 0,
+                                                                0, 93, 0, 
+                                                                1, float(delay_seconds), 0, 
+                                                                0.0, 0.0, 0, 0, 0)
+        
+        self.mission_items.add(delay)
+
+
 
 if __name__ == "__main__":
-    planner = MissionPlanner('udpin:localhost:14550')
-
-    # Wykazanie poprzedniej misji
-    # planner.retrieve_mission()
-
-    # Dodawanie nowej misji
-    planner.add_takeoff(altitude=10)
-    planner.add_waypoint(lat=47.397742, lon=8.545593, altitude=10, delay=5)  # 5 sekund opóźnienia
-    # planner.add_do_set_servo(servo_number=9, pwm_value=1500, duration=2)  # 2 sekundy trwania
-    planner.add_waypoint(lat=47.397850, lon=8.545700, altitude=10, delay=3)  # 3 sekundy opóźnienia
-    planner.add_waypoint(lat=48.397850, lon=8.545700, altitude=10, delay=3)  # 3 sekundy opóźnienia
-    planner.add_return_to_launch()
-
-    # Wgranie nowej misji do pojazdu
-    planner.upload_mission()
     
-    # Uzbrojenie drona i rozpoczęcie misji
-    # planner.arm_and_start_mission()
+# MISSION_ITEM {target_system : 255, target_component : 0, seq : 2, frame : 0, command : 183, current : 0, autocontinue : 1, param1 : 1.0, param2 : 1500.0, param3 : 0.0, param4 : 0.0, x : 0.0, y : 0.0, z : 0.0, mission_type : 0}
 
-    # Zamknięcie połączenia
-    planner.close_connection()
+    planner = MissionPlanner('udpin:localhost:14550')
+    planner.read_current_mission()
+    
+    # Dodawanie nowej misji
+    # planner.add_takeoff(altitude=10)
+    # planner.add_waypoint(lat=47.397742, lon=8.545593, altitude=10, delay=5)  # 5 sekund opóźnienia
+    # planner.set_servo(servo_number=1, pwm=1500)
+    # planner.set_delay(delay_seconds=33)
+    # planner.add_return_to_launch()
+
+    # planner.upload_mission()
+    
