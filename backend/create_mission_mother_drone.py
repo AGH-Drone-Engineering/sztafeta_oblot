@@ -1,4 +1,4 @@
-from pymavlink import mavutil
+from pymavlink import mavutil, mavwp
 
 class MissionPlanner:
     def __init__(self, connection_string):
@@ -6,18 +6,12 @@ class MissionPlanner:
         Inicjalizacja klasy MissionPlanner.
         """
         self.connection_string = connection_string
-        self.vehicle = self.connect_to_vehicle()
-        self.mission_items = []
-
-    def connect_to_vehicle(self):
-        """
-        Funkcja do połączenia się z pojazdem.
-        """
-        vehicle = mavutil.mavlink_connection(self.connection_string)
-        vehicle.wait_heartbeat()
-        print("Połączono z pojazdem!")
-        return vehicle
-
+        # self.vehicle = self.connect_to_vehicle()
+        self.mission_items = mavwp.MAVWPLoader()
+        self.vehicle = mavutil.mavlink_connection(self.connection_string)
+        self.vehicle.wait_heartbeat()
+        # self.wp = 
+    
     def create_takeoff_command(self, altitude):
         """
         Funkcja do stworzenia komendy TAKEOFF.
@@ -62,33 +56,27 @@ class MissionPlanner:
         """
         Dodaje komendę TAKEOFF do misji.
         """
-        self.mission_items.append(self.create_takeoff_command(altitude))
+        self.mission_items.add(self.create_takeoff_command(altitude))
 
     def add_waypoint(self, lat, lon, altitude, delay=0):
         """
         Dodaje komendę WAYPOINT do misji z opcjonalnym opóźnieniem.
         """
-        self.mission_items.append(self.create_waypoint_command(lat, lon, altitude, delay))
+        self.mission_items.add(self.create_waypoint_command(lat, lon, altitude, delay))
 
     def add_do_set_servo(self, servo_number, pwm_value, duration=0):
         """
         Dodaje komendę DO_SET_SERVO do misji z opcjonalnym czasem trwania.
         """
-        self.mission_items.append(self.create_do_set_servo_command(servo_number, pwm_value, duration))
+        self.mission_items.add(self.create_do_set_servo_command(servo_number, pwm_value, duration))
 
     def add_return_to_launch(self):
         """
         Dodaje komendę RETURN_TO_LAUNCH do misji.
         """
-        self.mission_items.append(self.create_return_to_launch_command())
+        self.mission_items.add(self.create_return_to_launch_command())
 
-    def clear_mission(self):
-        """
-        Czyści poprzednią misję z pojazdu.
-        """
-        self.vehicle.mav.mission_clear_all_send(self.vehicle.target_system, self.vehicle.target_component)
-        print("Poprzednia misja została usunięta.")
-
+    
     # def retrieve_mission(self):
     #     """
     #     Pobiera i wyświetla aktualną misję wgraną w dronie.
@@ -107,15 +95,17 @@ class MissionPlanner:
         """
         Funkcja do wgrania misji do pojazdu.
         """
-        self.clear_mission()  # Dodano wyczyszczenie poprzedniej misji
-        mission_count = len(self.mission_items)
-        self.vehicle.mav.mission_count_send(self.vehicle.target_system, self.vehicle.target_component, mission_count)
+        self.vehicle.waypoint_clear_all_send()  # Dodano wyczyszczenie poprzedniej misji
+        # mission_count = len(self.mission_items)
+        self.vehicle.waypoint_count_send(self.mission_items.count())
 
-        for i, item in enumerate(self.mission_items):
-            self.vehicle.mav.send(item)
-            ack = self.vehicle.recv_match(type='MISSION_ACK', blocking=True)
-            print(f"Komenda {i + 1}/{mission_count} wysłana.")
-
+        for i in range(self.mission_items.count()):
+            msg = self.vehicle.recv_match(type=['MISSION_REQUEST'], blocking=True)
+            self.vehicle.mav.send(self.mission_items.wp(msg.seq))
+            # ack = self.vehicle.recv_match(type='MISSION_ACK', blocking=True)
+            # print(f"Komenda {i + 1}/{mission_count} wysłana.")
+        msg = self.vehicle.recv_match(type=['MISSION_ACK'], blocking=True)  # OKAY
+        print(msg.type)
         print("Misja wgrana pomyślnie!")
 
     def arm_and_start_mission(self):
@@ -151,7 +141,8 @@ if __name__ == "__main__":
     planner.add_takeoff(altitude=10)
     planner.add_waypoint(lat=47.397742, lon=8.545593, altitude=10, delay=5)  # 5 sekund opóźnienia
     # planner.add_do_set_servo(servo_number=9, pwm_value=1500, duration=2)  # 2 sekundy trwania
-    # planner.add_waypoint(lat=47.397850, lon=8.545700, altitude=10, delay=3)  # 3 sekundy opóźnienia
+    planner.add_waypoint(lat=47.397850, lon=8.545700, altitude=10, delay=3)  # 3 sekundy opóźnienia
+    planner.add_waypoint(lat=48.397850, lon=8.545700, altitude=10, delay=3)  # 3 sekundy opóźnienia
     planner.add_return_to_launch()
 
     # Wgranie nowej misji do pojazdu
