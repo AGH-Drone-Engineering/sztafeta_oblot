@@ -46,7 +46,7 @@ class GPSDataViewer:
         st.session_state.last_clicked_location = location
 
     def show_map(self):
-        data = st.session_state.gps_data
+        data = st.session_state.gps_data.dropna(subset=['latitude', 'longitude'])  # Usunięcie punktów z NaN
         if not data.empty:
             center_lat = data['latitude'].mean()
             center_lon = data['longitude'].mean()
@@ -86,7 +86,7 @@ class GPSDataViewer:
             delay = st.number_input("Delay at this point (seconds)", min_value=0, step=1)
             drop = st.checkbox("Payload drop at this point?")
             servo = st.selectbox("Select Servo for drop", options=[1, 2, 3, 4]) if drop else None
-            drop_delay = st.number_input("Delay after drop (seconds)", min_value=0, step=1) if drop else None
+            drop_delay = st.number_input("Delay before drop (seconds)", min_value=0, step=1) if drop else None
             
             if st.button("Add Point"):
                 if st.session_state.edit_index is not None:
