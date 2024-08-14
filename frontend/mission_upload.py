@@ -14,7 +14,9 @@ class GPSDataViewer:
             st.session_state.lat = 53.0190700
         if 'lon' not in st.session_state:
             st.session_state.lon = 20.8802900
-        st.session_state.edit_index=None
+        if 'last_clicked_location' not in st.session_state:
+            st.session_state.last_clicked_location = None
+        st.session_state.edit_index = None
 
     def add_gps_point(self, lat, lon, delay, drop, servo, drop_delay, index=None):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -39,36 +41,41 @@ class GPSDataViewer:
         st.session_state.gps_data = st.session_state.gps_data.drop(index).reset_index(drop=True)
         return st.session_state.gps_data
 
+    def on_map_click(self, location):
+        st.session_state.last_clicked_location = location
+
     def show_map(self):
         data = st.session_state.gps_data
         if not data.empty:
             center_lat = data['latitude'].mean()
             center_lon = data['longitude'].mean()
-            map_ = folium.Map(location=[center_lat, center_lon], zoom_start=12)
-            
+        else:
+            center_lat = st.session_state.lat
+            center_lon = st.session_state.lon
+        
+        map_ = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+        
+        if not data.empty:
             for _, row in data.iterrows():
-                popup_text = f"Time: {row['timestamp']}"
+                popup_text = f"Lat: {row['latitude']}<br>Lon: {row['longitude']}"
                 if row['delay']:
-                    popup_text += f"<br>Delay: {row['delay']}s"
+                    popup_text += f"<br>Delay after match point: {row['delay']}s"
                 if row['drop']:
-                    popup_text += f"<br>Drop: Servo {row['servo']}, Delay: {row['drop_delay']}s"
+                    popup_text += f"<br>Servo {row['servo']}, Delay after servo: {row['drop_delay']}s"
                 folium.Marker(location=[row['latitude'], row['longitude']], 
                               popup=popup_text).add_to(map_)
             
             folium.PolyLine(locations=data[['latitude', 'longitude']].values.tolist(), color='blue').add_to(map_)
-            
-            sw = data[['latitude', 'longitude']].min().values.tolist()
-            ne = data[['latitude', 'longitude']].max().values.tolist()
-            map_.fit_bounds([sw, ne])
-            
-            folium_static(map_)
-        else:
-            st.warning("No GPS data available to display.")
+        
+        map_.add_child(folium.LatLngPopup())  # Dodaje popup z koordynatami przy kliknięciu
+        # map_.add_child(folium.ClickForMarker())  # Dodaje marker przy kliknięciu
+
+        folium_static(map_)
 
     def main(self):
         st.title("GPS Data Viewer")
         
-        st.subheader("Enter GPS Coordinates")
+        st.subheader("Enter WAYPOINT Coordinates")
         lat = st.number_input("Latitude", format="%.6f", value=st.session_state.lat, key="lat_input")
         lon = st.number_input("Longitude", format="%.6f", value=st.session_state.lon, key="lon_input")
         
@@ -106,6 +113,19 @@ class GPSDataViewer:
                 st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp', 'delay', 'drop', 'servo', 'drop_delay'])
                 st.success("All points removed.")
                 st.rerun()
+        
+        if st.session_state.last_clicked_location is not None:
+            st.subheader("Add Waypoint from Map Click")
+            clicked_lat, clicked_lon = st.session_state.last_clicked_location
+            st.write(f"Clicked location: Latitude: {clicked_lat}, Longitude: {clicked_lon}")
+            
+            if st.button("Add Clicked Point"):
+                if len(st.session_state.gps_data) < 15:
+                    self.add_gps_point(clicked_lat, clicked_lon, delay, drop, servo, drop_delay)
+                    st.success(f"Point added: ({clicked_lat}, {clicked_lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                    st.session_state.last_clicked_location = None
+                else:
+                    st.warning("You can add up to 15 points only.")
         
         if st.button("Upload Mission"):
             if not st.session_state.gps_data.empty:
