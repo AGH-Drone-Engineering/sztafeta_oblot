@@ -5,6 +5,7 @@ from folium import plugins
 from streamlit_folium import folium_static
 from datetime import datetime
 import requests
+import numpy as np
 
 class GPSDataViewer:
     def __init__(self):
@@ -59,7 +60,7 @@ class GPSDataViewer:
             for _, row in data.iterrows():
                 popup_text = f"Lat: {row['latitude']}<br>Lon: {row['longitude']}"
                 if row['delay']:
-                    popup_text += f"<br>Delay after match point: {row['delay']}s"
+                    popup_text += f"<br>Delay after match: {row['delay']}s"
                 if row['drop']:
                     popup_text += f"<br>Servo {row['servo']}, Delay after servo: {row['drop_delay']}s"
                 folium.Marker(location=[row['latitude'], row['longitude']], 
@@ -67,37 +68,49 @@ class GPSDataViewer:
             
             folium.PolyLine(locations=data[['latitude', 'longitude']].values.tolist(), color='blue').add_to(map_)
         
-        map_.add_child(folium.LatLngPopup())  # Dodaje popup z koordynatami przy kliknięciu
-        # map_.add_child(folium.ClickForMarker())  # Dodaje marker przy kliknięciu
+        map_.add_child(folium.LatLngPopup())
 
         folium_static(map_)
 
     def main(self):
         st.title("GPS Data Viewer")
         
-        st.subheader("Enter WAYPOINT Coordinates")
-        lat = st.number_input("Latitude", format="%.6f", value=st.session_state.lat, key="lat_input")
-        lon = st.number_input("Longitude", format="%.6f", value=st.session_state.lon, key="lon_input")
+        st.subheader("Choose Action")
+        action = st.radio("Select an action", ('Add Waypoint', 'Add Delay'))
+
+        if action == 'Add Waypoint':
+            st.subheader("Enter WAYPOINT Coordinates")
+            lat = st.number_input("Latitude", format="%.6f", value=st.session_state.lat, key="lat_input")
+            lon = st.number_input("Longitude", format="%.6f", value=st.session_state.lon, key="lon_input")
+            
+            delay = st.number_input("Delay at this point (seconds)", min_value=0, step=1)
+            drop = st.checkbox("Payload drop at this point?")
+            servo = st.selectbox("Select Servo for drop", options=[1, 2, 3, 4]) if drop else None
+            drop_delay = st.number_input("Delay after drop (seconds)", min_value=0, step=1) if drop else None
+            
+            if st.button("Add Point"):
+                if st.session_state.edit_index is not None:
+                    self.add_gps_point(lat, lon, delay, drop, servo, drop_delay, index=st.session_state.edit_index)
+                    st.success(f"Point {st.session_state.edit_index} updated.")
+                    st.session_state.edit_index = None
+                else:
+                    if len(st.session_state.gps_data) < 15:
+                        self.add_gps_point(lat, lon, delay, drop, servo, drop_delay)
+                        st.success(f"Point added: ({lat}, {lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                        st.session_state.lat = 53.0190700
+                        st.session_state.lon = 20.8802900
+                    else:
+                        st.warning("You can add up to 15 points only.")
         
-        delay = st.number_input("Delay at this point (seconds)", min_value=0, step=1)
-        drop = st.checkbox("Payload drop at this point?")
-        servo = st.selectbox("Select Servo for drop", options=[1, 2, 3, 4]) if drop else None
-        drop_delay = st.number_input("Delay before drop (seconds)", min_value=0, step=1) if drop else None
-        
-        if st.button("Add Point"):
-            if st.session_state.edit_index is not None:
-                self.add_gps_point(lat, lon, delay, drop, servo, drop_delay, index=st.session_state.edit_index)
-                st.success(f"Point {st.session_state.edit_index} updated.")
-                st.session_state.edit_index = None
-            else:
+        elif action == 'Add Delay':
+            delay = st.number_input("Enter Delay (seconds)", min_value=1, step=1)
+            if st.button("Add Delay"):
                 if len(st.session_state.gps_data) < 15:
-                    self.add_gps_point(lat, lon, delay, drop, servo, drop_delay)
-                    st.success(f"Point added: ({lat}, {lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                    st.session_state.lat = 53.0190700
-                    st.session_state.lon = 20.8802900
+                    self.add_gps_point(np.nan, np.nan, delay, np.nan, np.nan, np.nan)
+                    st.success(f"Delay added: {delay} seconds at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 else:
                     st.warning("You can add up to 15 points only.")
-        
+
         st.subheader("Data Preview")
         st.write(st.session_state.gps_data)
         
