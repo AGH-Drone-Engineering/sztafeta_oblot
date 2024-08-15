@@ -109,8 +109,12 @@ class MissionPlanner:
             print(self.mission_items.wp(msg.seq))
             
         msg = self.vehicle.recv_match(type=['MISSION_ACK'], blocking=True)  # OKAY
-        print(msg.type)
-        print("Misja wgrana pomyślnie!")
+        
+        if msg == 0:
+            return True
+        else:
+            return False
+        
 
     def arm_and_start_mission(self):
         """

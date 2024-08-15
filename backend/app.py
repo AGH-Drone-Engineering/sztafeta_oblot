@@ -30,20 +30,55 @@ app = FastAPI()
 
 class DataFramePayload(BaseModel):
     data: str
+    ip: str
+    port: int
 
 @app.post("/upload")
 async def upload(payload: DataFramePayload):
     data = payload.data
     if data:
         df = pd.read_json(data, orient='split')
-        print(df)
-        print(parse_dataframe(df))
-        # print(df)
-        # create_mission = MissionPlanner()
+        ip, port = payload.ip, payload.port
+        print(ip, port)
+        parsed_data = parse_dataframe(df)
+        try:
+            planner = MissionPlanner(f'udpin:{ip}:{port}')
+        except Exception as e:
+            return {"message": "Cannot communicate with vehicle" + str(e)}, 400
         
-        
-        
-        return {"message": "Data received successfully"}
+        try:
+            planner.add_takeoff(altitude=10)
+            
+            
+            for command in parsed_data:
+                
+                if ('add_waypoint' in command and 'delay' in command 
+                      and 'set_servo' in command and 'drop_delay' in command):
+                    planner.add_waypoint(lat=command['add_waypoint'][0], lon=command['add_waypoint'][1], 
+                                         altitude=10, delay=command['delay'])
+                    
+                    planner.set_servo(servo_number=command['set_servo'], pwm=1500)
+                    planner.set_delay(delay_seconds=command['drop_delay'])
+                    
+                elif 'add_waypoint' in command and 'delay' in command:
+                    planner.add_waypoint(lat=command['add_waypoint'][0], lon=command['add_waypoint'][1], 
+                                         altitude=10, delay=command['delay'])
+                    
+                elif 'delay' in command:
+                    planner.set_delay(delay_seconds=command['delay'])
+                else:
+                    return {"message": f"Invalid data received {command} "}, 400
+            planner.add_return_to_launch()
+            
+            mission_upload_status = planner.upload_mission()
+            planner.close_connection()
+            if mission_upload_status == True:
+                return {"message": "Data received successfully"}
+            else:
+                return {"message": "Mission upload failed"}, 400
+            
+        except Exception as e:
+            return {"message": str(e)}, 400
 
     else:
         return {"message": "No data received"}, 400

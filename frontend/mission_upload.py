@@ -139,13 +139,19 @@ class GPSDataViewer:
                     st.session_state.last_clicked_location = None
                 else:
                     st.warning("You can add up to 15 points only.")
+        st.subheader("Map")
+        self.show_map()
         
+        st.subheader("Server Connection Settings")
+        ip_address = st.text_input("Enter server IP address", value="127.0.0.1")
+        port = st.text_input("Enter server port", value="14550")
+
         if st.button("Upload Mission"):
             if not st.session_state.gps_data.empty:
                 url = "http://localhost:8001/upload"  # Adres serwera FastAPI
                 data_json = st.session_state.gps_data.to_json(orient='split')
                 try:
-                    response = requests.post(url, json={"data": data_json})
+                    response = requests.post(url, json={"data": data_json, "ip": ip_address, "port": port})
                     if response.status_code == 200:
                         st.success("Mission uploaded successfully.")
                     else:
@@ -155,8 +161,7 @@ class GPSDataViewer:
             else:
                 st.warning("No points to upload.")
 
-        st.subheader("Map")
-        self.show_map()
+        
 
 # To use the class:
 viewer = GPSDataViewer()
