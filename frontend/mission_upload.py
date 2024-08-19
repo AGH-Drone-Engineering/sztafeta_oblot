@@ -12,15 +12,16 @@ class GPSDataViewer:
         if 'gps_data' not in st.session_state:
             st.session_state.gps_data = pd.DataFrame(columns=['latitude', 'longitude', 'timestamp', 'delay', 'drop', 'servo', 'drop_delay'])
         if 'lat' not in st.session_state:
-            st.session_state.lat = 53.0190700
+            st.session_state.lat = 53.0190701
         if 'lon' not in st.session_state:
-            st.session_state.lon = 20.8802900
+            st.session_state.lon = 20.8802902
         if 'last_clicked_location' not in st.session_state:
             st.session_state.last_clicked_location = None
         st.session_state.edit_index = None
 
     def add_gps_point(self, lat, lon, delay, drop, servo, drop_delay, index=None):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        pd.options.display.float_format = '{:.8f}'.format
         new_point = pd.DataFrame({
             'latitude': [lat], 
             'longitude': [lon], 
@@ -80,8 +81,8 @@ class GPSDataViewer:
 
         if action == 'Add Waypoint':
             st.subheader("Enter WAYPOINT Coordinates")
-            lat = st.number_input("Latitude", format="%.6f", value=st.session_state.lat, key="lat_input")
-            lon = st.number_input("Longitude", format="%.6f", value=st.session_state.lon, key="lon_input")
+            lat = st.number_input("Latitude", format="%.8f", value=st.session_state.lat, key="lat_input", step=0.0000001)
+            lon = st.number_input("Longitude", format="%.8f", value=st.session_state.lon, key="lon_input", step=0.0000001)
             
             delay = st.number_input("Delay at this point (seconds)", min_value=0, step=1)
             drop = st.checkbox("Payload drop at this point?")
@@ -94,7 +95,7 @@ class GPSDataViewer:
                     st.success(f"Point {st.session_state.edit_index} updated.")
                     st.session_state.edit_index = None
                 else:
-                    if len(st.session_state.gps_data) < 15:
+                    if len(st.session_state.gps_data) < 30:
                         self.add_gps_point(lat, lon, delay, drop, servo, drop_delay)
                         st.success(f"Point added: ({lat}, {lon}) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                         st.session_state.lat = 53.0190700
@@ -105,7 +106,7 @@ class GPSDataViewer:
         elif action == 'Add Delay':
             delay = st.number_input("Enter Delay (seconds)", min_value=1, step=1)
             if st.button("Add Delay"):
-                if len(st.session_state.gps_data) < 15:
+                if len(st.session_state.gps_data) < 30:
                     self.add_gps_point(np.nan, np.nan, delay, np.nan, np.nan, np.nan)
                     st.success(f"Delay added: {delay} seconds at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 else:
@@ -145,13 +146,16 @@ class GPSDataViewer:
         st.subheader("Server Connection Settings")
         ip_address = st.text_input("Enter server IP address", value="127.0.0.1")
         port = st.text_input("Enter server port", value="14550")
-
+        height = st.number_input("Height Operation", key="height", step=1, value=10)
+            
         if st.button("Upload Mission"):
             if not st.session_state.gps_data.empty:
                 url = "http://localhost:8001/upload"  # Adres serwera FastAPI
-                data_json = st.session_state.gps_data.to_json(orient='split')
+                # Konwersja do JSON z zaokrągleniem do 8 miejsc po przecinku
+                data_json = st.session_state.gps_data.round(8).to_json(orient='split')
                 try:
-                    response = requests.post(url, json={"data": data_json, "ip": ip_address, "port": port})
+                    response = requests.post(url, json={"data": data_json, "ip": ip_address, 
+                                                        "port": port, "height": height})
                     if response.status_code == 200:
                         st.success("Mission uploaded successfully.")
                     else:
@@ -160,8 +164,6 @@ class GPSDataViewer:
                     st.error(f"Failed to upload data. Error: {str(e)}")
             else:
                 st.warning("No points to upload.")
-
-        
 
 # To use the class:
 viewer = GPSDataViewer()

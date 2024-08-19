@@ -32,14 +32,18 @@ class DataFramePayload(BaseModel):
     data: str
     ip: str
     port: int
+    height: int
 
 @app.post("/upload")
 async def upload(payload: DataFramePayload):
     data = payload.data
     if data:
+        pd.options.display.float_format = '{:.8f}'.format
         df = pd.read_json(data, orient='split')
+        
         ip, port = payload.ip, payload.port
-        print(ip, port)
+        
+        height = payload.height
         parsed_data = parse_dataframe(df)
         try:
             planner = MissionPlanner(f'udpin:{ip}:{port}')
@@ -47,7 +51,7 @@ async def upload(payload: DataFramePayload):
             return {"message": "Cannot communicate with vehicle" + str(e)}, 400
         
         try:
-            planner.add_takeoff(altitude=10)
+            planner.add_takeoff(altitude=height)
             
             
             for command in parsed_data:
@@ -55,14 +59,14 @@ async def upload(payload: DataFramePayload):
                 if ('add_waypoint' in command and 'delay' in command 
                       and 'set_servo' in command and 'drop_delay' in command):
                     planner.add_waypoint(lat=command['add_waypoint'][0], lon=command['add_waypoint'][1], 
-                                         altitude=10, delay=command['delay'])
+                                         altitude=height, delay=command['delay'])
                     
                     planner.set_servo(servo_number=command['set_servo'], pwm=1500)
                     planner.set_delay(delay_seconds=command['drop_delay'])
                     
                 elif 'add_waypoint' in command and 'delay' in command:
                     planner.add_waypoint(lat=command['add_waypoint'][0], lon=command['add_waypoint'][1], 
-                                         altitude=10, delay=command['delay'])
+                                         altitude=height, delay=command['delay'])
                     
                 elif 'delay' in command:
                     planner.set_delay(delay_seconds=command['delay'])
