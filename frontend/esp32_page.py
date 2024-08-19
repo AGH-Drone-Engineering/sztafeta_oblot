@@ -4,7 +4,7 @@ import requests
 st.title("ESP Control Panel")
 
 # API endpoint
-api_url = "http://localhost:8000"
+api_url = "http://localhost:8001"
 
 # Pobranie dostępnych urządzeń ESP
 response = requests.get(f"{api_url}/devices")
