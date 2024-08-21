@@ -17,18 +17,26 @@ class MissionPlanner:
         Funkcja do stworzenia komendy TAKEOFF.
         """
         return mavutil.mavlink.MAVLink_mission_item_int_message(
-            0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, 
-            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 1, 
+            0, 0, 0, 0, 
+            16, 0, 1, 
             0, 0, 0, 0, int(0 * 1e7), int(0 * 1e7), altitude
         )
-
+        
+    
+    def create_takeoff_second_command(self, altitude):
+        return mavutil.mavlink.MAVLink_mission_item_int_message(
+            0, 0, 0, 3, 
+            22, 0, 1, 
+            0, 0, 0, 0, int(0 * 1e7), int(0 * 1e7), altitude
+        )
+    
     def create_waypoint_command(self, lat, lon, altitude, delay=0):
         """
         Funkcja do stworzenia komendy WAYPOINT z opcjonalnym opóźnieniem.
         """
         return mavutil.mavlink.MAVLink_mission_item_int_message(
             0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, 
-            mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 1, 
+            82, 0, 1, 
             delay, 0, 0, 0, int(lat * 1e7), int(lon * 1e7), altitude
         )
 
@@ -57,6 +65,10 @@ class MissionPlanner:
         Dodaje komendę TAKEOFF do misji.
         """
         self.mission_items.add(self.create_takeoff_command(altitude))
+        
+        self.mission_items.add(self.create_takeoff_second_command(altitude))
+        
+        
 
     def add_waypoint(self, lat, lon, altitude, delay=0):
         """
@@ -161,7 +173,7 @@ if __name__ == "__main__":
     
 # MISSION_ITEM {target_system : 255, target_component : 0, seq : 2, frame : 0, command : 183, current : 0, autocontinue : 1, param1 : 1.0, param2 : 1500.0, param3 : 0.0, param4 : 0.0, x : 0.0, y : 0.0, z : 0.0, mission_type : 0}
 
-    planner = MissionPlanner('udpin:localhost:14550')
+    planner = MissionPlanner('udpin:localhost:14552')
     planner.read_current_mission()
     
     # Dodawanie nowej misji
