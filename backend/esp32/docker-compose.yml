@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend_fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    ports:
+      - "8003:8003"  # Mapowanie portu 8003
+    volumes:
+      - ./:/app       # Montowanie obecnego katalogu do kontenera
+    networks:
+      - databases_external_db_api  # Połączenie z zewnętrzną siecią
+
+networks:
+  databases_external_db_api:
+    external: true
+    # driver: bridge  # Opcjonalnie, jeśli korzystasz z mostka sieciowego
