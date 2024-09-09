@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:  # Add the build configuration
+      context: .  # Use the current directory as the build context
+      dockerfile: Dockerfile  # Specify the Dockerfile to use
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./:/app
+
+    networks:
+      - databases_external_db_api
+
+networks:
+  databases_external_db_api:
+    # external: true
+    driver: bridge

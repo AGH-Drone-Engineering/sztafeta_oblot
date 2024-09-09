@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Mission Planner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="./leaflet.css" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <div id="map"></div>
+    <div id="panel">
+        <div id="info">
+            <h2>Drone Mission Planner</h2>
+        </div>
+        <div id="controls">
+            <button id="start-adding-button" class="button" onclick="startAdding()">Start Adding Points</button>
+            <button id="start-editing-button" class="button" onclick="startEditing()">Start Editing Points</button>
+            <button class="button" onclick="deleteSelectedPoint()">Delete Selected Point</button>
+            <button class="button" onclick="clearAllPoints()">Clear All Points</button>
+            <input type="file" id="file-upload" accept=".json" />
+            <button class="custom-file-button" onclick="document.getElementById('file-upload').click()">Upload File</button>
+            <button class="button" onclick="exportToFile()">Export Points</button>
+        </div>
+        <div id="edit-controls">
+            <h3>Edit Selected Point</h3>
+            <label for="lat-input">Latitude:</label>
+            <input type="number" id="lat-input" step="any" />
+            <label for="lng-input">Longitude:</label>
+            <input type="number" id="lng-input" step="any" />
+            <button class="button" onclick="updateSelectedMarker()">Update Point</button>
+
+            <table id="points-table">
+                <thead>
+                    <tr>
+                        <th>#</th>  
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="connection-settings">
+            <h3>Server Connection Settings</h3>
+            <label for="ip-address">Enter server IP address:</label>
+            <input type="text" id="ip-address" value="127.0.0.1" /><br>
+
+            <label for="port">Enter server port:</label>
+            <input type="text" id="port" value="14550" /><br>
+
+            <label for="height">Height Operation:</label>
+            <input type="number" id="height" step="1" value="10" /><br>
+
+            <button class="button" id="upload-mission-btn">Upload Mission</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="leaflet.js"></script>
+</body>
+</html>

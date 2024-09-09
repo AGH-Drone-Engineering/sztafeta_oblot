@@ -1,0 +1,224 @@
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #dddddd;
+}
+
+#info {
+  text-align: center;
+}
+#info h2 {
+  margin: 10px 0px;
+}
+
+#panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 5px;
+  width: 420px;
+  height: 98vh;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: scroll;
+}
+#map {
+  height: 100vh;
+  width: 80%;
+  border-bottom: 1px solid #ddd;
+  box-sizing: border-box;
+}
+#controls,
+#edit-controls {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 10px 10px;
+}
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#controls .button,
+#edit-controls .button {
+  padding: 10px 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #ad192f;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s, transform 0.3s;
+}
+#controls .button:hover,
+#edit-controls .button:hover {
+  background-color: #5c0d19;
+}
+#edit-controls h3 {
+  margin: 0 0 5px;
+  font-size: 12px;
+  color: black;
+}
+#edit-controls label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: black;
+}
+#edit-controls input {
+  width: calc(100% - 42px);
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+#connection-settings {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  max-width: 400px;
+}
+
+#connection-settings h2 {
+  margin-top: 0;
+  color: #333333;
+}
+
+#connection-settings label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555555;
+}
+
+#connection-settings input[type="text"],
+#connection-settings input[type="number"] {
+  width: calc(100% - 20px);
+  padding: 8px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+#connection-settings input[type="number"] {
+  -moz-appearance: textfield; /* Remove the number input spinner */
+}
+
+#connection-settings input[type="number"]::-webkit-inner-spin-button,
+#connection-settings input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none; /* Remove the number input spinner in WebKit browsers */
+  margin: 0; /* Remove any default margin */
+}
+
+#connection-settings .button {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #ffffff;
+  background-color: #0b6d40;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+#connection-settings .button:hover {
+  background-color: #093d1b;
+}
+
+#connection-settings .button:active {
+  background-color: #085c28;
+}
+
+#points-table {
+  margin: 10px 0px;
+  width: calc(100% - 20px);
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 3px;
+  overflow: hidden;
+}
+#points-table th,
+#points-table td {
+  font-size: 12px;
+  padding: 5px;
+  text-align: left;
+  border-bottom: 1px solid black;
+}
+#points-table th {
+  background-color: black;
+  color: #ffffff;
+  font-weight: bold;
+}
+#points-table td {
+  color: black;
+}
+#points-table .td-index {
+  font-weight: bold;
+}
+
+.selected {
+  background-color: #7eaf98;
+}
+.move-buttons {
+  gap: 5px;
+}
+.move-buttons button {
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background-color: #ffc9d0;
+  border: 1px solid black;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+tr.dragging {
+  background-color: #dddddd;
+}
+tr.drop-target-top {
+  border-top: 2px solid #ad192f;
+}
+tr.drop-target-bottom {
+  border-bottom: 2px solid #ad192f;
+}
+
+/* Hide the default file input */
+input[type="file"] {
+  display: none;
+}
+
+/* Style the custom file upload button */
+.custom-file-button {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  background-color: #0b6d40;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.custom-file-button:hover {
+  background-color: #093d1b;
+}
+
+.custom-file-button:active {
+  background-color: #085c28;
+}
+
+#controls .selected {
+  background-color: #5c0d19;
+}
