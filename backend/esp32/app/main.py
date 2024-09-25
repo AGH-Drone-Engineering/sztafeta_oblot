@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import requests
 import json
 import socket
+import uvicorn  # Dodane
 
 app = FastAPI()
 
@@ -57,3 +58,7 @@ def send_coordinates(coordinates: Coordinates):
             raise HTTPException(status_code=response.status_code, detail=response.text)
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8003)

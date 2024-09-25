@@ -234,7 +234,7 @@ else:
         beacon_delay = st.number_input("Beacon Delay (s)", value=300, min_value=1, )
         
         servo_value = st.selectbox("Servo Value", [93, 95, 97])
-        ip_address = st.text_input("External Server IP Address", value='192.169.18.90', key=external_ip_key)
+        ip_address = st.text_input("External Server IP Address", value='192.168.18.90', key=external_ip_key)
         
         # Update the session state when inputs change
         st.session_state.points[selected_map_key] = [lat_input, lon_input, alt_input]
