@@ -11,7 +11,8 @@ class Coordinates(BaseModel):
     long: float
     lat: float
     altitude: float
-    delay: int
+    delay: float
+    servo_value: int
     ip: str  # Dodano pole IP urządzenia
 
 # Funkcja sprawdzająca połączenie z urządzeniem
@@ -31,6 +32,7 @@ def send_coordinates(coordinates: Coordinates):
     
     # Sprawdzenie połączenia z urządzeniem
     if not check_connection(coordinates.ip):
+        print(f"Cannot connect to device at {coordinates.ip}")
         raise HTTPException(status_code=400, detail=f"Cannot connect to device at {coordinates.ip}")
     
     headers = {
@@ -41,10 +43,12 @@ def send_coordinates(coordinates: Coordinates):
         "long": coordinates.long,
         "lat": coordinates.lat,
         "altitude": coordinates.altitude,
-        "delay": coordinates.delay
+        "delay": coordinates.delay,
+        "servo_value": coordinates.servo_value
     }
-
+    print(data)
     try:
+        # Wysłanie danych w formacie JSON do wskazanego URL
         response = requests.post(url, headers=headers, data=json.dumps(data))
 
         if response.status_code == 200:

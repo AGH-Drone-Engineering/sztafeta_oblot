@@ -34,10 +34,10 @@ if 'points' not in st.session_state:
 
 # Define default IP addresses and ports for each map
 default_settings = {
-    "map1": ("192.168.1.1", 14551),
-    "map2": ("192.168.1.2", 14552),
-    "map3": ("192.168.1.3", 14553),
-    "map4": ("192.168.1.4", 14554),
+    "map1": ("192.168.69.90"),
+    "map2": ("192.168.69.2"),
+    "map3": ("192.168.1.3"),
+    "map4": ("192.168.1.4"),
 }
 
 class GPSDataViewer:
@@ -230,9 +230,12 @@ else:
         external_ip_key = f"external_ip_{selected_map_key}"
         external_port_key = f"external_port_{selected_map_key}"
 
-        ip_address = st.text_input("External Server IP Address", value=default_settings[selected_map_key][0], key=external_ip_key)
-        server_port = st.number_input("External Server Port", value=default_settings[selected_map_key][1], min_value=1, max_value=65535, key=external_port_key)
-
+        # server_port = st.number_input("External Server Port", value=default_settings[selected_map_key][1], min_value=1, max_value=65535, key=external_port_key)
+        beacon_delay = st.number_input("Beacon Delay (s)", value=300, min_value=1, )
+        
+        servo_value = st.selectbox("Servo Value", [93, 95, 97])
+        ip_address = st.text_input("External Server IP Address", value='192.169.18.90', key=external_ip_key)
+        
         # Update the session state when inputs change
         st.session_state.points[selected_map_key] = [lat_input, lon_input, alt_input]
 
@@ -241,32 +244,38 @@ else:
             create_map(selected_map_key, [lat_input, lon_input, alt_input])
 
         # Input field for Height Operation
-        height_operation = st.number_input("Height Operation (m):", value=10.0, step=0.1)
+        # height_operation = st.number_input("Height Operation (m):", value=10.0, step=0.1)
 
         # Upload Mission Button
         if st.button("Upload Mission"):
-            # Prepare the data for uploading
-            gps_data = pd.DataFrame({
-                "latitude": [st.session_state.points[selected_map_key][0]],
-                "longitude": [st.session_state.points[selected_map_key][1]],
-                "altitude": [st.session_state.points[selected_map_key][2]]
-            })
-            
-            # Simulate GPS data storage
-            st.session_state.gps_data = pd.concat([st.session_state.gps_data, gps_data], ignore_index=True)
+    # Przygotowanie danych do wysyłki
+            latitude = st.session_state.points[selected_map_key][0]
+            longitude = st.session_state.points[selected_map_key][1]
+            altitude = st.session_state.points[selected_map_key][2]
 
-            if not st.session_state.gps_data.empty:
-                # Construct URL using the provided External IP address and server port
-                url = f"http://{ip_address}:{server_port}/upload/"
-                # Convert to JSON with rounding to 8 decimal places
-                data_json = st.session_state.gps_data.round(8).to_json(orient='split')
-                try:
-                    response = requests.post(url, json={"data": data_json, "ip": ip_address})
-                    if response.status_code == 200:
-                        st.success("Mission uploaded successfully.")
-                    else:
-                        st.error(f"Failed to upload data. Server responded with status code {response.status_code}.")
-                except requests.exceptions.RequestException as e:
-                    st.error(f"Failed to upload data. Error: {str(e)}")
-            else:
-                st.warning("No points to upload.")
+            # Stworzenie struktury JSON dla danych
+            data = {
+                "long": longitude,
+                "lat": latitude,
+                "altitude": altitude,
+                "delay": beacon_delay,
+                "servo_value": servo_value,
+                "ip": ip_address
+            }
+            
+            # Wysłanie danych do backendu
+            url = "http://127.0.0.1:8003/streamlit-coordinates"
+            
+            try:
+                # Wysyłka danych w formacie JSON
+                response = requests.post(url, json=data)
+                
+                # Sprawdzenie odpowiedzi
+                if response.status_code == 200:
+                    st.success("Mission uploaded successfully.")
+                else:
+                    st.error(f"Failed to upload data. Server responded with status code {response.status_code}.")
+            
+            except requests.exceptions.RequestException as e:
+                st.error(f"Failed to upload data. Error: {str(e)}")
+
