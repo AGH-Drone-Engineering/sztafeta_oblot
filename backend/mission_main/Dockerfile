@@ -3,13 +3,11 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy the dependencies file to the working directory
-COPY requirements.txt .
+COPY ./backend/mission_main ./
    
 RUN pip install --no-cache-dir -r requirements.txt
 
-VOLUME [ "/app" ]
-
-EXPOSE 8001
+EXPOSE 8003
 
 # Command to run the application
-CMD ["uvicorn", "mother_mission:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["python","app.py"]
