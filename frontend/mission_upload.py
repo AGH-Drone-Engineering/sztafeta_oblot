@@ -264,7 +264,7 @@ else:
             }
             
             # Wysłanie danych do backendu
-            url = "http://127.0.0.1:8003/streamlit-coordinates"
+            url = "http://127.0.0.1:8001/streamlit-coordinates"
             
             try:
                 # Wysyłka danych w formacie JSON
