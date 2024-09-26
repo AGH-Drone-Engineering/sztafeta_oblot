@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  backend_mother:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./:/app
+
+    networks:
+      - databases_external_db_api
+
+networks:
+  databases_external_db_api:
+    external: true
+    # driver: bridge

@@ -1,0 +1,22 @@
+# Używamy obrazu bazowego Pythona
+FROM python:3.9-slim
+
+# Ustawienie zmiennej środowiskowej, aby python nie buforował
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Utwórz katalog roboczy w obrazie
+WORKDIR /app
+
+# Skopiuj pliki do katalogu roboczego
+COPY ./app /app
+
+# Skopiuj plik requirements.txt i zainstaluj zależności
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+
+# Expose port 8003
+EXPOSE 8003
+
+# Komenda do uruchomienia aplikacji
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
