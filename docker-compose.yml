@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile 
+    network_mode: host
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/mission_main/Dockerfile 
+    network_mode: host

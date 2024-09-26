@@ -3,11 +3,9 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy the dependencies file to the working directory
-COPY . ./
+COPY ./backend/mission_main ./
    
 RUN pip install --no-cache-dir -r requirements.txt
-
-VOLUME [ "/app" ]
 
 EXPOSE 8003
 
