@@ -30,7 +30,7 @@ if 'points' not in st.session_state:
         "map3": [53.01907010, 20.88029020, 10.0],  # Przasnysz
         "map4": [53.01907010, 20.88029020, 10.0]   # Przasnysz
     }
-    st.session_state.gps_data = pd.DataFrame(columns=["latitude", "longitude", "altitude", "timestamp", "delay", "drop", "servo", "drop_delay"])  # Placeholder for GPS data
+    st.session_state.gps_data = pd.DataFrame(columns=["latitude", "longitude", "altitude", "timestamp", "delay", "drop", "servo", "servo_value_octa", "drop_delay"])  # Placeholder for GPS data
 
 # Define default IP addresses and ports for each map
 default_settings = {
@@ -50,7 +50,7 @@ class GPSDataViewer:
         if 'edit_index' not in st.session_state:
             st.session_state.edit_index = None
 
-    def add_gps_point(self, lat, lon, alt, delay, drop, servo, drop_delay, index=None):
+    def add_gps_point(self, lat, lon, alt, delay, drop, servo, servo_value_octa, drop_delay, index=None):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         new_point = pd.DataFrame({
             'latitude': [lat], 
@@ -60,6 +60,7 @@ class GPSDataViewer:
             'delay': [delay],
             'drop': [drop],
             'servo': [servo],
+            'servo_value_octa': [servo_value_octa],
             'drop_delay': [drop_delay]
         })
 
@@ -112,10 +113,11 @@ class GPSDataViewer:
             delay = st.number_input("Delay at this point (seconds)", min_value=0, step=1)
             drop = st.checkbox("Payload drop at this point?")
             servo = st.selectbox("Select Servo for drop", options=[1, 2, 3, 4]) if drop else None
+            servo_value_octa = st.number_input("Select Servo value for drop", min_value=0, step=1, value=1500) if drop else None
             drop_delay = st.number_input("Delay before drop (seconds)", min_value=0, step=1) if drop else None
             
             if st.button("Add Point"):
-                self.add_gps_point(lat, lon, alt, delay, drop, servo, drop_delay)
+                self.add_gps_point(lat, lon, alt, delay, drop, servo, servo_value_octa, drop_delay)
                 st.success(f"Point added: ({lat}, {lon}, {alt}m) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         elif action == 'Add Delay':
@@ -141,7 +143,7 @@ class GPSDataViewer:
         st.subheader("Server Connection Settings")
         ip_address = st.text_input("Enter server IP address", value="127.0.0.1")
         port = st.text_input("Enter server port", value="14550")
-        height = st.number_input("Height Operation", key="height", step=1, value=10)
+        height = st.number_input("Height Operation", key="height", step=1, value=60)
             
         if st.button("Upload Mission"):
             if not st.session_state.gps_data.empty:

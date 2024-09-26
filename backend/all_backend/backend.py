@@ -18,6 +18,7 @@ class Coordinates(BaseModel):
     delay: float
     servo_value: int
     ip: str
+    
 
 # Model danych do przetwarzania pliku JSON
 class DataFramePayload(BaseModel):
@@ -81,7 +82,7 @@ def parse_row(row):
         elif row['drop'] == 1 and pd.notna(row['servo']):
             if pd.notna(row['drop_delay']):
                 return {"add_waypoint": [row['latitude'], row['longitude']], "delay": row['delay'], 
-                        "set_servo": row['servo'], "drop_delay": row['drop_delay']}
+                        "set_servo": row['servo'], "drop_delay": row['drop_delay'], "servo_value_octa": row['servo_value_octa']}
     elif pd.isna(row['latitude']) and pd.isna(row['longitude']) and pd.notna(row['delay']):
         return {"delay": row['delay']}
     return None
@@ -119,9 +120,10 @@ async def upload(payload: DataFramePayload):
             for command in parsed_data:
                 if ('add_waypoint' in command and 'delay' in command and 
                     'set_servo' in command and 'drop_delay' in command):
+                    print(command)
                     planner.add_waypoint(lat=command['add_waypoint'][0], lon=command['add_waypoint'][1], 
                                          altitude=height, delay=command['delay'])
-                    planner.set_servo(servo_number=command['set_servo'], pwm=1500)
+                    planner.set_servo(servo_number=command['set_servo'], pwm=command['servo_value_octa'])
                     planner.set_delay(delay_seconds=command['drop_delay'])
                 elif 'add_waypoint' in command and 'delay' in command:
                     planner.add_waypoint(lat=command['add_waypoint'][0], lon=command['add_waypoint'][1], 
