@@ -138,23 +138,28 @@ class GPSDataViewer:
         st.subheader("Map")
         self.show_map()
         
-        # Server connection settings
+        st.subheader("Server Connection Settings")
         ip_address = st.text_input("Enter server IP address", value="127.0.0.1")
-        server_port = st.number_input("Enter server port", value=14550, min_value=1, max_value=65535)  # New field for server port
-        height_operation = st.number_input("Height Operation (m)", value=10.0, step=0.1)  # New field for height operation
+        port = st.text_input("Enter server port", value="14550")
+        height = st.number_input("Height Operation", key="height", step=1, value=10)
+            
         if st.button("Upload Mission"):
             if not st.session_state.gps_data.empty:
-                url = f"http://{ip_address}:{server_port}/upload"  # Use user-specified IP address and port
+                url = "http://localhost:8001/upload"  # Adres serwera FastAPI
+                # Konwersja do JSON z zaokrągleniem do 8 miejsc po przecinku
                 data_json = st.session_state.gps_data.round(8).to_json(orient='split')
                 try:
-                    response = requests.post(url, json={"data": data_json, "ip": ip_address})
+                    response = requests.post(url, json={"data": data_json, "ip": ip_address, 
+                                                        "port": port, "height": height})
                     if response.status_code == 200:
                         st.success("Mission uploaded successfully.")
                     else:
                         st.error(f"Failed to upload data. Server responded with status code {response.status_code}.")
                 except requests.exceptions.RequestException as e:
                     st.error(f"Failed to upload data. Error: {str(e)}")
-
+            else:
+                st.warning("No points to upload.")
+                
 # Function to create a map and handle point selection
 def create_map(map_key, location):
     # Create a Folium map centered at the specified location
@@ -278,4 +283,3 @@ else:
             
             except requests.exceptions.RequestException as e:
                 st.error(f"Failed to upload data. Error: {str(e)}")
-
